@@ -50,26 +50,59 @@
   });
 
   function php_email_form_submit(thisForm, action, formData) {
-    fetch(action, {
-      method: 'POST',
-      body: formData,
-      headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(response => {
-      return response.text();
-    })
-    .then(data => {
-      thisForm.querySelector('.loading').classList.remove('d-block');
-      if (data.trim() == 'OK') {
-        thisForm.querySelector('.sent-message').classList.add('d-block');
-        thisForm.reset(); 
-      } else {
-        throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
-      }
-    })
-    .catch((error) => {
-      displayError(thisForm, error);
-    });
+    // Verificar se é Formspree
+    if (action.includes('formspree.io')) {
+      // Tratamento específico para Formspree
+      fetch(action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Erro ao enviar mensagem');
+        }
+      })
+      .then(data => {
+        thisForm.querySelector('.loading').classList.remove('d-block');
+        // Verificar se a resposta do Formspree indica sucesso
+        if (data.ok === true) {
+          thisForm.querySelector('.sent-message').classList.add('d-block');
+          thisForm.reset();
+        } else {
+          throw new Error('Erro ao enviar mensagem');
+        }
+      })
+      .catch((error) => {
+        displayError(thisForm, error);
+      });
+    } else {
+      // Tratamento original para PHP
+      fetch(action, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      })
+      .then(response => {
+        return response.text();
+      })
+      .then(data => {
+        thisForm.querySelector('.loading').classList.remove('d-block');
+        if (data.trim() == 'OK') {
+          thisForm.querySelector('.sent-message').classList.add('d-block');
+          thisForm.reset(); 
+        } else {
+          throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
+        }
+      })
+      .catch((error) => {
+        displayError(thisForm, error);
+      });
+    }
   }
 
   function displayError(thisForm, error) {
